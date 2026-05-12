@@ -3,20 +3,20 @@ const CACHE_NAME = 'iki-cell-v3.0';
 const RUNTIME_CACHE = 'iki-cell-runtime-v3';
 
 const PRECACHE_ASSETS = [
-    '/',
-    '/index.html',
-    '/splash.html',
-    '/sw.js',
-    '/manifest.json',
-    '/icons/icon-72x72.png',
-    '/icons/icon-96x96.png',
-    '/icons/icon-128x128.png',
-    '/icons/icon-144x144.png',
-    '/icons/icon-152x152.png',
-    '/icons/icon-192x192.png',
-    '/icons/icon-384x384.png',
-    '/icons/icon-512x512.png',
-    '/icons/maskable-icon-512x512.png'
+    'ikicell/',
+    'ikicell/index.html',
+    'ikicell/splash.html',
+    'ikicell/sw.js',
+    'ikicell/manifest.json',
+    'ikicell/icons/icon-72x72.png',
+    'ikicell/icons/icon-96x96.png',
+    'ikicell/icons/icon-128x128.png',
+    'ikicell/icons/icon-144x144.png',
+    'ikicell/icons/icon-152x152.png',
+    'ikicell/icons/icon-192x192.png',
+    'ikicell/icons/icon-384x384.png',
+    'ikicell/icons/icon-512x512.png',
+    'ikicell/icons/maskable-icon-512x512.png'
 ];
 
 // Install

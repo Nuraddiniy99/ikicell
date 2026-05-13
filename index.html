@@ -2752,205 +2752,172 @@
         document.addEventListener('DOMContentLoaded', init);
     </script>
     
-    <!-- PWA Config -->
-    <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
-    <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192x192.png">
+<!-- PWA Manifest & Icons -->
+<link rel="manifest" href="/iki-cell/manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="/iki-cell/icons/icon-192x192.png">
+<link rel="apple-touch-icon" sizes="192x192" href="/iki-cell/icons/icon-192x192.png">
+
+<!-- iOS Standalone -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="IKI Cell">
+
+<!-- Android Standalone -->
+<meta name="mobile-web-app-capable" content="yes">
+
+<script>
+(function() {
+    'use strict';
     
-    <!-- iOS Standalone Mode -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="IKI Cell">
+    var deferredPrompt = null;
+    var installModalShown = false;
     
-    <!-- Android/Chrome -->
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#0a1628">
+    function isStandaloneMode() {
+        return window.matchMedia('(display-mode: standalone)').matches ||
+               window.matchMedia('(display-mode: fullscreen)').matches ||
+               window.navigator.standalone ||
+               document.referrer.indexOf('android-app://') !== -1;
+    }
     
-    <!-- Prevent pull-to-refresh dan overscroll -->
-    <style>
-        html, body {
-            overscroll-behavior-y: none;
-            overscroll-behavior-x: none;
-        }
-        body::-webkit-scrollbar,
-        .page::-webkit-scrollbar,
-        .modal-sheet::-webkit-scrollbar {
-            display: none !important;
-            width: 0 !important;
-            height: 0 !important;
-        }
-        body {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-    </style>
-    
-    <script>
-    (function() {
-        'use strict';
-        
-        var deferredPrompt = null;
-        var installModalShown = false;
-        
-        function isStandaloneMode() {
-            return window.matchMedia('(display-mode: standalone)').matches ||
-                   window.matchMedia('(display-mode: fullscreen)').matches ||
-                   window.navigator.standalone ||
-                   document.referrer.indexOf('android-app://') !== -1;
-        }
-        
-        // === REDIRECT KE SPLASH SAAT PERTAMA KALI BUKA (bukan dari splash) ===
-        if (!isStandaloneMode() && !window.location.href.includes('splash.html') && !sessionStorage.getItem('iki_splash_seen')) {
-            sessionStorage.setItem('iki_splash_seen', '1');
-            window.location.replace('splash.html');
-            return;
-        }
-        
-        // === JIKA STANDALONE, TAMPILKAN SPLASH SCREEN BUILT-IN ===
-        if (isStandaloneMode()) {
-            // Tambahkan class ke body untuk styling khusus standalone
-            document.documentElement.classList.add('standalone-mode');
-        }
-        
-        // === REGISTER SERVICE WORKER ===
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js').then(function(registration) {
-                    console.log('[PWA] SW registered:', registration.scope);
-                }).catch(function(err) {
-                    console.error('[PWA] SW registration failed:', err);
-                });
+    // Register Service Worker (path relative ke lokasi file)
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/iki-cell/sw.js').then(function(registration) {
+                console.log('[IKI Cell] SW registered:', registration.scope);
+            }).catch(function(err) {
+                console.error('[IKI Cell] SW registration failed:', err);
             });
+        });
+    }
+    
+    // Beforeinstallprompt handler
+    window.addEventListener('beforeinstallprompt', function(e) {
+        console.log('[IKI Cell] beforeinstallprompt fired');
+        e.preventDefault();
+        deferredPrompt = e;
+        
+        if (!installModalShown && !isStandaloneMode()) {
+            showInstallPopup();
         }
         
-        // === BEFOREINSTALLPROMPT HANDLER ===
-        window.addEventListener('beforeinstallprompt', function(e) {
-            console.log('[PWA] beforeinstallprompt fired');
-            e.preventDefault();
-            deferredPrompt = e;
-            
+        var btn = document.getElementById('installBtnSettings');
+        if (btn) {
+            btn.style.display = 'block';
+            btn.disabled = false;
+            btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Install Aplikasi';
+        }
+    });
+    
+    window.addEventListener('appinstalled', function() {
+        console.log('[IKI Cell] App was installed!');
+        deferredPrompt = null;
+        removeInstallModal();
+        var btn = document.getElementById('installBtnSettings');
+        if (btn) {
+            btn.textContent = 'Terinstall';
+            btn.disabled = true;
+        }
+    });
+    
+    function showInstallPopup() {
+        if (installModalShown) return;
+        installModalShown = true;
+        
+        var existing = document.getElementById('pwaNativeInstallModal');
+        if (existing) existing.remove();
+        
+        var overlay = document.createElement('div');
+        overlay.id = 'pwaNativeInstallModal';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.9);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:center;padding:24px;animation:fadeIn 0.3s ease;';
+        
+        var dialog = document.createElement('div');
+        dialog.style.cssText = 'background:linear-gradient(145deg,#12192b,#0d1220);border:1px solid rgba(59,130,246,0.3);border-radius:28px;padding:36px 28px 28px;max-width:360px;width:100%;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,0.6),0 0 60px rgba(59,130,246,0.1);animation:slideUp 0.5s cubic-bezier(0.34,1.56,0.64,1);';
+        
+        dialog.innerHTML = 
+            '<div style="position:relative;width:80px;height:80px;margin:0 auto 20px">' +
+                '<div style="position:absolute;inset:-8px;border:2px solid rgba(59,130,246,0.2);border-radius:50%;animation:ringPulse 2s ease-in-out infinite"></div>' +
+                '<div style="position:absolute;inset:-18px;border:2px solid rgba(139,92,246,0.15);border-radius:50%;animation:ringPulse 2s ease-in-out 0.3s infinite"></div>' +
+                '<div style="width:80px;height:80px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:20px;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 40px rgba(59,130,246,0.4);position:relative;z-index:1">' +
+                    '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+                        '<polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/>' +
+                        '<line x1="12" y1="22" x2="12" y2="15.5"/>' +
+                        '<polyline points="22 8.5 12 15.5 2 8.5"/>' +
+                    '</svg>' +
+                '</div>' +
+            '</div>' +
+            '<h2 style="color:#f1f5f9;font-size:22px;font-weight:700;margin-bottom:8px;letter-spacing:-0.5px">Install IKI Cell</h2>' +
+            '<p style="color:#94a3b8;font-size:13px;line-height:1.6;margin-bottom:6px">Dapatkan pengalaman seperti aplikasi native</p>' +
+            '<p style="color:#64748b;font-size:11px;line-height:1.5;margin-bottom:20px">Fullscreen • Cepat • Bebas Browser</p>' +
+            '<button id="pwaInstallActionBtn" style="width:100%;padding:15px;background:linear-gradient(135deg,#3b82f6,#2563eb);color:white;border:none;border-radius:16px;font-size:15px;font-weight:600;cursor:pointer;letter-spacing:0.3px;box-shadow:0 6px 24px rgba(59,130,246,0.4);font-family:inherit;transition:all 0.2s ease">' +
+                '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:8px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
+                'Install Aplikasi' +
+            '</button>' +
+            '<button id="pwaDismissActionBtn" style="width:100%;padding:12px;background:transparent;color:#64748b;border:none;font-size:13px;cursor:pointer;margin-top:6px;font-family:inherit;transition:color 0.2s">Nanti saja</button>';
+        
+        overlay.appendChild(dialog);
+        document.body.appendChild(overlay);
+        
+        if (!document.getElementById('pwaKeyframeStyles')) {
+            var styleEl = document.createElement('style');
+            styleEl.id = 'pwaKeyframeStyles';
+            styleEl.textContent = '@keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes slideUp{from{opacity:0;transform:translateY(40px) scale(0.9)}to{opacity:1;transform:translateY(0) scale(1)}}@keyframes ringPulse{0%,100%{transform:scale(1);opacity:0.4}50%{transform:scale(1.08);opacity:0.8}}';
+            document.head.appendChild(styleEl);
+        }
+        
+        document.getElementById('pwaInstallActionBtn').addEventListener('click', function() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then(function(choiceResult) {
+                    console.log('[IKI Cell] User choice:', choiceResult.outcome);
+                    deferredPrompt = null;
+                });
+                overlay.remove();
+                installModalShown = false;
+            } else {
+                this.textContent = 'Menunggu...';
+                this.disabled = true;
+                var self = this;
+                setTimeout(function() {
+                    if (deferredPrompt) {
+                        deferredPrompt.prompt();
+                        deferredPrompt.userChoice.then(function(r) {
+                            console.log('[IKI Cell] Retry result:', r.outcome);
+                            deferredPrompt = null;
+                        });
+                        overlay.remove();
+                        installModalShown = false;
+                    } else {
+                        self.textContent = 'Coba Lagi';
+                        self.disabled = false;
+                    }
+                }, 1500);
+            }
+        });
+        
+        document.getElementById('pwaDismissActionBtn').addEventListener('click', function() {
+            overlay.remove();
+            installModalShown = false;
+        });
+    }
+    
+    function removeInstallModal() {
+        var modal = document.getElementById('pwaNativeInstallModal');
+        if (modal) modal.remove();
+        installModalShown = false;
+    }
+    
+    // Fallback popup setelah 5 detik
+    window.addEventListener('load', function() {
+        setTimeout(function() {
             if (!installModalShown && !isStandaloneMode()) {
                 showInstallPopup();
             }
-            
-            var btn = document.getElementById('installBtnSettings');
-            if (btn) {
-                btn.style.display = 'block';
-                btn.disabled = false;
-                btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Install Aplikasi';
-            }
-        });
-        
-        window.addEventListener('appinstalled', function() {
-            console.log('[PWA] App was installed!');
-            deferredPrompt = null;
-            removeInstallModal();
-            var btn = document.getElementById('installBtnSettings');
-            if (btn) {
-                btn.textContent = 'Terinstall';
-                btn.disabled = true;
-            }
-        });
-        
-        // === POPUP INSTALL ===
-        function showInstallPopup() {
-            if (installModalShown) return;
-            installModalShown = true;
-            
-            var existing = document.getElementById('pwaNativeInstallModal');
-            if (existing) existing.remove();
-            
-            var overlay = document.createElement('div');
-            overlay.id = 'pwaNativeInstallModal';
-            overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.9);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:center;padding:24px;animation:fadeIn 0.3s ease;';
-            
-            var dialog = document.createElement('div');
-            dialog.style.cssText = 'background:linear-gradient(145deg,#12192b,#0d1220);border:1px solid rgba(59,130,246,0.3);border-radius:28px;padding:36px 28px 28px;max-width:360px;width:100%;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,0.6),0 0 60px rgba(59,130,246,0.1);animation:slideUp 0.5s cubic-bezier(0.34,1.56,0.64,1);';
-            
-            dialog.innerHTML = 
-                '<div style="position:relative;width:80px;height:80px;margin:0 auto 20px">' +
-                    '<div style="position:absolute;inset:-8px;border:2px solid rgba(59,130,246,0.2);border-radius:50%;animation:ringPulse 2s ease-in-out infinite"></div>' +
-                    '<div style="position:absolute;inset:-18px;border:2px solid rgba(139,92,246,0.15);border-radius:50%;animation:ringPulse 2s ease-in-out 0.3s infinite"></div>' +
-                    '<div style="width:80px;height:80px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:20px;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 40px rgba(59,130,246,0.4);position:relative;z-index:1">' +
-                        '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-                            '<polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/>' +
-                            '<line x1="12" y1="22" x2="12" y2="15.5"/>' +
-                            '<polyline points="22 8.5 12 15.5 2 8.5"/>' +
-                        '</svg>' +
-                    '</div>' +
-                '</div>' +
-                '<h2 style="color:#f1f5f9;font-size:22px;font-weight:700;margin-bottom:8px;letter-spacing:-0.5px">Install IKI Cell</h2>' +
-                '<p style="color:#94a3b8;font-size:13px;line-height:1.6;margin-bottom:6px">Dapatkan pengalaman seperti aplikasi native</p>' +
-                '<p style="color:#64748b;font-size:11px;line-height:1.5;margin-bottom:20px">Fullscreen • Cepat • Bebas Browser</p>' +
-                '<button id="pwaInstallActionBtn" style="width:100%;padding:15px;background:linear-gradient(135deg,#3b82f6,#2563eb);color:white;border:none;border-radius:16px;font-size:15px;font-weight:600;cursor:pointer;letter-spacing:0.3px;box-shadow:0 6px 24px rgba(59,130,246,0.4);font-family:inherit;transition:all 0.2s ease">' +
-                    '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:8px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
-                    'Install Aplikasi' +
-                '</button>' +
-                '<button id="pwaDismissActionBtn" style="width:100%;padding:12px;background:transparent;color:#64748b;border:none;font-size:13px;cursor:pointer;margin-top:6px;font-family:inherit;transition:color 0.2s">Nanti saja</button>';
-            
-            overlay.appendChild(dialog);
-            document.body.appendChild(overlay);
-            
-            if (!document.getElementById('pwaKeyframeStyles')) {
-                var styleEl = document.createElement('style');
-                styleEl.id = 'pwaKeyframeStyles';
-                styleEl.textContent = '@keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes slideUp{from{opacity:0;transform:translateY(40px) scale(0.9)}to{opacity:1;transform:translateY(0) scale(1)}}@keyframes ringPulse{0%,100%{transform:scale(1);opacity:0.4}50%{transform:scale(1.08);opacity:0.8}}';
-                document.head.appendChild(styleEl);
-            }
-            
-            document.getElementById('pwaInstallActionBtn').addEventListener('click', function() {
-                if (deferredPrompt) {
-                    deferredPrompt.prompt();
-                    deferredPrompt.userChoice.then(function(choiceResult) {
-                        console.log('[PWA] User choice:', choiceResult.outcome);
-                        deferredPrompt = null;
-                    });
-                    overlay.remove();
-                    installModalShown = false;
-                } else {
-                    this.textContent = 'Menunggu...';
-                    this.disabled = true;
-                    var self = this;
-                    setTimeout(function() {
-                        if (deferredPrompt) {
-                            deferredPrompt.prompt();
-                            deferredPrompt.userChoice.then(function(r) {
-                                console.log('[PWA] Retry result:', r.outcome);
-                                deferredPrompt = null;
-                            });
-                            overlay.remove();
-                            installModalShown = false;
-                        } else {
-                            self.textContent = 'Coba Lagi';
-                            self.disabled = false;
-                        }
-                    }, 1500);
-                }
-            });
-            
-            document.getElementById('pwaDismissActionBtn').addEventListener('click', function() {
-                overlay.remove();
-                installModalShown = false;
-            });
-        }
-        
-        function removeInstallModal() {
-            var modal = document.getElementById('pwaNativeInstallModal');
-            if (modal) modal.remove();
-            installModalShown = false;
-        }
-        
-        // Fallback popup setelah 5 detik
-        window.addEventListener('load', function() {
-            setTimeout(function() {
-                if (!installModalShown && !isStandaloneMode()) {
-                    showInstallPopup();
-                }
-            }, 5000);
-        });
-        
-    })();
-    </script>
+        }, 5000);
+    });
+    
+})();
+</script>
+
       
 </body>
 </html>

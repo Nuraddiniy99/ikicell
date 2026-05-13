@@ -1,91 +1,89 @@
 // IKI CELL v3.0 - Service Worker
-// Force activation dan caching lengkap
+// Cache-first strategy - by MAS Tracker schema
 
-const CACHE_NAME = 'iki-cell-v3';
-const RUNTIME_CACHE = 'iki-cell-runtime-v3';
-
-const PRECACHE_URLS = [
-    '/ikicell/',
-    '/ikicell/index.html',
-    '/ikicell/splash.html',
-    '/ikicell/sw.js',
-    '/ikicell/manifest.json',
-    '/ikicell/icons/icon-72x72.png',
-    '/ikicell/icons/icon-96x96.png',
-    '/ikicell/icons/icon-128x128.png',
-    '/ikicell/icons/icon-144x144.png',
-    '/ikicell/icons/icon-152x152.png',
-    '/ikicell/icons/icon-192x192.png',
-    '/ikicell/icons/icon-384x384.png',
-    '/ikicell/icons/icon-512x512.png',
-    '/ikicell/icons/maskable-icon-512x512.png'
+const CACHE_NAME = 'iki-cell-v3.0.0';
+const STATIC_ASSETS = [
+    '/iki-cell/',
+    '/iki-cell/index.html',
+    '/iki-cell/splash.html',
+    '/iki-cell/manifest.json',
+    '/iki-cell/sw.js',
+    '/iki-cell/icons/icon-72x72.png',
+    '/iki-cell/icons/icon-96x96.png',
+    '/iki-cell/icons/icon-128x128.png',
+    '/iki-cell/icons/icon-144x144.png',
+    '/iki-cell/icons/icon-152x152.png',
+    '/iki-cell/icons/icon-192x192.png',
+    '/iki-cell/icons/icon-384x384.png',
+    '/iki-cell/icons/icon-512x512.png',
+    '/iki-cell/icons/maskable-icon-512x512.png'
 ];
 
-// Install event
-self.addEventListener('install', function(event) {
-    console.log('[SW] Installing...');
+// Install event - cache static assets
+self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
-            .then(function(cache) {
-                console.log('[SW] Caching all assets');
-                return cache.addAll(PRECACHE_URLS);
+            .then((cache) => {
+                console.log('[IKI Cell] Caching static assets...');
+                return cache.addAll(STATIC_ASSETS);
             })
-            .then(function() {
-                console.log('[SW] Skip waiting');
-                return self.skipWaiting();
-            })
+            .then(() => self.skipWaiting())
+            .catch((err) => console.log('[IKI Cell] Cache failed:', err))
     );
 });
 
-// Activate event
-self.addEventListener('activate', function(event) {
-    console.log('[SW] Activating...');
-    var cacheWhitelist = [CACHE_NAME, RUNTIME_CACHE];
+// Activate event - clean old caches
+self.addEventListener('activate', (event) => {
     event.waitUntil(
-        caches.keys().then(function(cacheNames) {
+        caches.keys().then((cacheNames) => {
             return Promise.all(
-                cacheNames.map(function(cacheName) {
-                    if (cacheWhitelist.indexOf(cacheName) === -1) {
-                        console.log('[SW] Deleting old cache:', cacheName);
-                        return caches.delete(cacheName);
-                    }
-                })
+                cacheNames
+                    .filter((name) => name !== CACHE_NAME)
+                    .map((name) => {
+                        console.log('[IKI Cell] Deleting old cache:', name);
+                        return caches.delete(name);
+                    })
             );
-        }).then(function() {
-            console.log('[SW] Claiming clients');
-            return self.clients.claim();
+        }).then(() => self.clients.claim())
+    );
+});
+
+// Fetch event - serve from cache, fallback to network
+self.addEventListener('fetch', (event) => {
+    if (event.request.method !== 'GET') return;
+    if (event.request.url.startsWith('chrome-extension://')) return;
+
+    event.respondWith(
+        caches.match(event.request).then((cached) => {
+            if (cached) {
+                // Update cache in background
+                fetch(event.request)
+                    .then((response) => {
+                        if (response.status === 200) {
+                            caches.open(CACHE_NAME).then((cache) => {
+                                cache.put(event.request, response.clone());
+                            });
+                        }
+                    })
+                    .catch(() => {});
+                return cached;
+            }
+
+            return fetch(event.request)
+                .then((response) => {
+                    if (response.status === 200) {
+                        const responseClone = response.clone();
+                        caches.open(CACHE_NAME).then((cache) => {
+                            cache.put(event.request, responseClone);
+                        });
+                    }
+                    return response;
+                })
+                .catch(() => {
+                    if (event.request.mode === 'navigate') {
+                        return caches.match('/iki-cell/index.html');
+                    }
+                });
         })
     );
 });
-
-// Fetch event - Network first
-self.addEventListener('fetch', function(event) {
-    if (event.request.method !== 'GET') return;
-    
-    var url = new URL(event.request.url);
-    if (!url.protocol.startsWith('http')) return;
-
-    event.respondWith(
-        fetch(event.request)
-            .then(function(response) {
-                if (response && response.status === 200) {
-                    var responseClone = response.clone();
-                    caches.open(RUNTIME_CACHE).then(function(cache) {
-                        cache.put(event.request, responseClone);
-                    });
-                }
-                return response;
-            })
-            .catch(function() {
-                return caches.match(event.request).then(function(cachedResponse) {
-                    if (cachedResponse) return cachedResponse;
-                    if (event.request.headers.get('accept') && event.request.headers.get('accept').indexOf('text/html') !== -1) {
-                        return caches.match('./index.html');
-                    }
-                    return new Response('Offline', {status: 503, statusText: 'Service Unavailable'});
-                });
-            })
-    );
-});
-
-console.log('[SW] Service Worker file loaded');

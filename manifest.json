@@ -1,70 +1,34 @@
 {
-    "id": "./",
     "name": "IKI Cell - Digital Services",
     "short_name": "IKI Cell",
     "description": "Professional Digital Services Platform - Pulsa, WiFi, Listrik, Roqm",
-    "start_url": "/ikicell/splash.html",
-    "scope": "./",
+    "start_url": "/iki-cell/splash.html",
     "display": "standalone",
-    "display_override": ["standalone", "fullscreen", "minimal-ui"],
-    "orientation": "portrait-primary",
-    "theme_color": "#0a1628",
+    "display_override": ["fullscreen", "standalone"],
+    "orientation": "portrait",
     "background_color": "#0a1628",
+    "theme_color": "#0a1628",
+    "scope": "/iki-cell/",
+    "id": "/iki-cell/",
     "categories": ["business", "finance", "utilities"],
-    "lang": "id-ID",
+    "lang": "id",
     "dir": "ltr",
     "prefer_related_applications": false,
     "icons": [
         {
-            "src": "icons/icon-72x72.png",
-            "sizes": "72x72",
-            "type": "image/png"
-        },
-        {
-            "src": "icons/icon-96x96.png",
-            "sizes": "96x96",
-            "type": "image/png"
-        },
-        {
-            "src": "icons/icon-128x128.png",
-            "sizes": "128x128",
-            "type": "image/png"
-        },
-        {
-            "src": "icons/icon-144x144.png",
-            "sizes": "144x144",
-            "type": "image/png"
-        },
-        {
-            "src": "icons/icon-152x152.png",
-            "sizes": "152x152",
-            "type": "image/png"
-        },
-        {
-            "src": "icons/icon-192x192.png",
+            "src": "/iki-cell/icons/icon-192x192.png",
             "sizes": "192x192",
             "type": "image/png",
             "purpose": "any"
         },
         {
-            "src": "icons/icon-192x192.png",
-            "sizes": "192x192",
-            "type": "image/png",
-            "purpose": "maskable"
-        },
-        {
-            "src": "icons/icon-384x384.png",
-            "sizes": "384x384",
-            "type": "image/png"
-        },
-        {
-            "src": "icons/icon-512x512.png",
+            "src": "/iki-cell/icons/icon-512x512.png",
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "any"
         },
         {
-            "src": "icons/maskable-icon-512x512.png",
+            "src": "/iki-cell/icons/maskable-icon-512x512.png",
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "maskable"
@@ -76,8 +40,8 @@
             "name": "Order Baru",
             "short_name": "Order",
             "description": "Buat transaksi baru",
-            "url": "./",
-            "icons": [{"src": "icons/icon-192x192.png", "sizes": "192x192"}]
+            "url": "/iki-cell/?page=add",
+            "icons": [{"src": "/iki-cell/icons/icon-192x192.png", "sizes": "192x192"}]
         }
     ]
 }

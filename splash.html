@@ -6,6 +6,11 @@
     <meta name="theme-color" content="#0a1628">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <!-- Tambahkan ke <head> splash.html -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    
     <title>IKI Cell</title>
     <style>
         :root {
@@ -240,20 +245,13 @@
     </div>
 
     <script>
-        // Setelah animasi selesai, redirect ke index.html
         setTimeout(function() {
-            // Animasi fade out halus
             document.querySelector('.splash-container').style.transition = 'opacity 0.4s ease, transform 0.4s ease';
             document.querySelector('.splash-container').style.opacity = '0';
             document.querySelector('.splash-container').style.transform = 'scale(1.05)';
             
             setTimeout(function() {
-                var basePath = '';
-                var pathParts = window.location.pathname.split('/');
-                if (pathParts.length > 2 && pathParts[1] !== '') {
-                    basePath = '/' + pathParts[1];
-                }
-                window.location.replace(basePath + '/index.html');
+                window.location.replace('./index.html');
             }, 400);
         }, 2200);
     </script>

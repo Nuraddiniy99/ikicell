@@ -4,7 +4,7 @@
 const CACHE_NAME = 'iki-cell-v3';
 const RUNTIME_CACHE = 'iki-cell-runtime-v3';
 
-const PRECACHE_ASSETS = [
+const PRECACHE_URLS = [
     './',
     './index.html',
     './splash.html',
@@ -80,7 +80,7 @@ self.addEventListener('fetch', function(event) {
                 return caches.match(event.request).then(function(cachedResponse) {
                     if (cachedResponse) return cachedResponse;
                     if (event.request.headers.get('accept') && event.request.headers.get('accept').indexOf('text/html') !== -1) {
-                        return caches.match('/index.html');
+                        return caches.match('./index.html');
                     }
                     return new Response('Offline', {status: 503, statusText: 'Service Unavailable'});
                 });

@@ -248,7 +248,12 @@
             document.querySelector('.splash-container').style.transform = 'scale(1.05)';
             
             setTimeout(function() {
-                window.location.replace('./index.html');
+                var basePath = '';
+                var pathParts = window.location.pathname.split('/');
+                if (pathParts.length > 2 && pathParts[1] !== '') {
+                    basePath = '/' + pathParts[1];
+                }
+                window.location.replace(basePath + '/index.html');
             }, 400);
         }, 2200);
     </script>
